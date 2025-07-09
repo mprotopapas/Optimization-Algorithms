@@ -1,0 +1,102 @@
+import random
+import math
+import matplotlib.pyplot as plt
+
+# Class to store the coordinates of a pointDesktop/New Folder/dataset1.txt
+class Coordinate:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+# Function to read a TSP file and extract the coordinates
+def read_tsp_file(filename):
+    coords = []
+    dimension_value = 0
+    name = ""
+
+    try:
+        with open(filename, 'r') as file:
+            in_node_section = False
+            for line in file:
+                line = line.strip()
+                if line.startswith("NAME"):
+                    # Extract the name of the problem
+                    name = line.split(":")[1].strip()
+                elif line.startswith("DIMENSION"):
+                    # Extract the number of nodes
+                    dimension_value = int(line.split(":")[1].strip())
+                elif line.startswith("NODE_COORD_SECTION"):
+                    # Start reading the coordinates
+                    in_node_section = True
+                elif in_node_section:
+                    parts = line.split()
+                    if len(parts) >= 3:
+                        # Extract and store the coordinates
+                        x, y = map(float, parts[1:])
+                        coords.append(Coordinate(x, y))
+                    # Stop reading if we have reached the specified number of nodes
+                    if len(coords) == dimension_value:
+                        break
+        return name, dimension_value, coords
+    except FileNotFoundError:
+        print(f"Error: File {filename} not found.")
+        return None, None, []
+    except Exception as e:
+        print(f"Error reading file: {e}")
+        return None, None, []
+
+# Function to calculate the Euclidean distance between two points
+def calculate_distance(coord1, coord2):
+    return math.sqrt((coord1.x - coord2.x) ** 2 + (coord1.y - coord2.y) ** 2)
+
+# Function to generate a random path and calculate its total distance
+def generate_random_path(coords, seed=None):
+    if seed is not None:
+        random.seed(seed)
+
+    dimension_value = len(coords)
+    path = list(range(dimension_value))
+    random.shuffle(path)
+    path.append(path[0])  # Return to the starting point to complete the loop
+
+    total_distance = 0
+    for i in range(1, len(path)):
+        total_distance += calculate_distance(coords[path[i - 1]], coords[path[i]])
+    
+    return total_distance, path
+
+# Function to plot the path on a graph
+def plot_path(coords, path):
+    x = [coords[i].x for i in path]
+    y = [coords[i].y for i in path]
+
+    plt.figure(figsize=(10, 8))
+    plt.plot(x, y, marker='o', linestyle='-', linewidth=1, markersize=4, color='b')
+    plt.title('Randomly Generated Salesman Path')
+    plt.xlabel('X Coordinate')
+    plt.ylabel('Y Coordinate')
+    plt.legend(['Path'], loc='best')
+    plt.grid(True)
+    # Annotate each point with its index
+    # for i, txt in enumerate(path):
+    #     plt.annotate(txt, (x[i], y[i]), textcoords="offset points", xytext=(0,10), ha='center', fontsize=8, color='red') (This is for the node names)
+    plt.show()
+
+# Main program
+filename = input("Enter the filename: ").strip()
+
+print(f"Attempting to read file: {filename}")
+
+name, dimension_value, coords = read_tsp_file(filename)
+
+if coords:
+    total_distance, random_path = generate_random_path(coords, seed=42)
+
+    print("Random Path:", random_path)
+    print("Name:", name)
+    print("Dimension:", dimension_value)
+    print("Total Distance:", total_distance)
+    
+    plot_path(coords, random_path)
+else:
+    print("Failed to read coordinates from the file.")
